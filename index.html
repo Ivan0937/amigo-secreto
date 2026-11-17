@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Amigo Secreto Navideño</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #e11d48;
+      --accent-hover: #be123c;
+      --gold: #f59e0b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1e293b, var(--bg));
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .container {
+      width: 100%;
+      max-width: 520px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    h1 { margin: 0 0 0.5rem; font-size: 1.6rem; text-align: center; }
+    p.subtitle { margin: 0 0 1.5rem; color: var(--muted); text-align: center; font-size: 0.95rem; }
+    label { display: block; font-weight: 600; margin-bottom: 0.4rem; font-size: 0.9rem; }
+    textarea, input {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 0.8rem;
+      font-size: 0.95rem;
+      margin-bottom: 1.2rem;
+    }
+    textarea:focus, input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    button {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0.9rem 1.2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button:hover { background: var(--accent-hover); }
+    button:active { transform: scale(0.99); }
+    .link-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      margin-bottom: 0.6rem;
+    }
+    .link-item span { font-weight: 600; }
+    .copy-btn {
+      width: auto;
+      padding: 0.45rem 0.9rem;
+      font-size: 0.85rem;
+      background: #334155;
+    }
+    .copy-btn.copied { background: #16a34a; }
+    .reveal-box {
+      text-align: center;
+      padding: 2rem 1rem;
+      background: #0f172a;
+      border: 1px dashed var(--gold);
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+    .target-name {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--gold);
+      margin: 0.5rem 0;
+      letter-spacing: 0.5px;
+    }
+    .rule-badge {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--gold);
+      padding: 0.4rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- VISTA 1: ORGANIZADOR -->
+    <div id="organizer-view">
+      <h1>Sorteo Amigo Secreto</h1>
+      <p class="subtitle">Genera enlaces privados. Nadie (ni tú) verá quién le tocó a quién.</p>
+
+      <label for="names">Participantes (1 nombre por línea):</label>
+      <textarea id="names" rows="10" placeholder="Ana&#10;Carlos&#10;Sofía&#10;..."></textarea>
+
+      <label for="rules">Regla o presupuesto (opcional):</label>
+      <input id="rules" type="text" placeholder="Ej: Regalo de $50.000 - Entrega 24 de dic" />
+
+      <button id="generate-btn">Generar enlaces secretos</button>
+
+      <div id="results-section" class="hidden" style="margin-top: 1.8rem;">
+        <p class="subtitle" style="margin-bottom: 1rem;">
+          Envía cada enlace por privado. El resultado está oculto dentro del código de la URL.
+        </p>
+        <div id="links-list"></div>
+      </div>
+    </div>
+
+    <!-- VISTA 2: PARTICIPANTE -->
+    <div id="participant-view" class="hidden">
+      <h1>Tu Amigo Secreto</h1>
+      <p class="subtitle" id="greeting"></p>
+
+      <div class="reveal-box">
+        <div id="pre-reveal">
+          <p style="color: var(--muted); margin-bottom: 1rem;">Asegúrate de que nadie esté mirando tu pantalla.</p>
+          <button id="reveal-btn">Descubrir a quién le regalo</button>
+        </div>
+        <div id="post-reveal" class="hidden">
+          <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">Te tocó regalarle a:</p>
+          <div class="target-name" id="target-name"></div>
+          <div id="rule-display" class="rule-badge hidden"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Codificación UTF-8 + XOR con salt aleatorio + Base64 URL-safe
+    function encodeSecret(payload) {
+      const bytes = new TextEncoder().encode(JSON.stringify(payload));
+      const salt = crypto.getRandomValues(new Uint8Array(1))[0];
+      const out = new Uint8Array(bytes.length + 1);
+      out[0] = salt;
+      for (let i = 0; i < bytes.length; i++) {
+        out[i + 1] = bytes[i] ^ salt ^ ((i * 31 + 7) & 0xff);
+      }
+      let bin = '';
+      out.forEach(b => bin += String.fromCharCode(b));
+      return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function decodeSecret(token) {
+      let b64 = token.replace(/-/g, '+').replace(/_/g, '/');
+      while (b64.length % 4) b64 += '=';
+      const bin = atob(b64);
+      const data = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) data[i] = bin.charCodeAt(i);
+      const salt = data[0];
+      const bytes = new Uint8Array(data.length - 1);
+      for (let i = 0; i < bytes.length; i++) {
+        bytes[i] = data[i + 1] ^ salt ^ ((i * 31 + 7) & 0xff);
+      }
+      return JSON.parse(new TextDecoder().decode(bytes));
+    }
+
+    // Mezcla criptográfica Fisher-Yates
+    function cryptoShuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const rand = new Uint32Array(1);
+        crypto.getRandomValues(rand);
+        const j = rand[0] % (i + 1);
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Inicialización según modo (Organizador vs Participante)
+    const hash = window.location.hash;
+    if (hash.startsWith('#s=')) {
+      try {
+        const data = decodeSecret(hash.slice(3));
+        document.getElementById('organizer-view').classList.add('hidden');
+        document.getElementById('participant-view').classList.remove('hidden');
+        document.getElementById('greeting').textContent = `Hola ${data.g}, este es tu pase privado del sorteo.`;
+        document.getElementById('target-name').textContent = data.r;
+        if (data.m) {
+          const ruleEl = document.getElementById('rule-display');
+          ruleEl.textContent = data.m;
+          ruleEl.classList.remove('hidden');
+        }
+        document.getElementById('reveal-btn').addEventListener('click', () => {
+          document.getElementById('pre-reveal').classList.add('hidden');
+          document.getElementById('post-reveal').classList.remove('hidden');
+        });
+      } catch (e) {
+        alert('El enlace del sorteo es inválido o está incompleto.');
+      }
+    }
+
+    document.getElementById('generate-btn').addEventListener('click', () => {
+      const raw = document.getElementById('names').value;
+      const names = raw.split('\n').map(n => n.trim()).filter(Boolean);
+      const rule = document.getElementById('rules').value.trim();
+
+      if (names.length < 3) {
+        alert('Ingresa al menos 3 participantes.');
+        return;
+      }
+      if (new Set(names.map(n => n.toLowerCase())).size !== names.length) {
+        alert('Hay nombres repetidos. Diferéncialos (ej: Ana M. y Ana P.).');
+        return;
+      }
+
+      // Ciclo único: el elemento i le regala al elemento (i + 1) % N
+      const shuffled = cryptoShuffle(names);
+      const pairs = shuffled.map((giver, idx) => ({
+        giver,
+        receiver: shuffled[(idx + 1) % shuffled.length]
+      }));
+
+      // Ordenar la lista visual alfabéticamente para no revelar el orden del ciclo
+      pairs.sort((a, b) => a.giver.localeCompare(b.giver));
+
+      const baseUrl = window.location.href.split('#')[0];
+      const listEl = document.getElementById('links-list');
+      listEl.innerHTML = '';
+
+      pairs.forEach(({ giver, receiver }) => {
+        const token = encodeSecret({ g: giver, r: receiver, m: rule });
+        const fullUrl = `${baseUrl}#s=${token}`;
+
+        const row = document.createElement('div');
+        row.className = 'link-item';
+        row.innerHTML = `
+          <span>Para: ${giver}</span>
+          <button class="copy-btn">Copiar enlace</button>
+        `;
+        const btn = row.querySelector('button');
+        btn.addEventListener('click', async () => {
+          await navigator.clipboard.writeText(fullUrl);
+          btn.textContent = '¡Copiado!';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.textContent = 'Copiar enlace';
+            btn.classList.remove('copied');
+          }, 2000);
+        });
+        listEl.appendChild(row);
+      });
+
+      document.getElementById('results-section').classList.remove('hidden');
+    });
+  </script>
+</body>
+</html>
