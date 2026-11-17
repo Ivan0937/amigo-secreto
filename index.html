@@ -2,156 +2,479 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#071917" />
   <title>Amigo Secreto Navideño</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --accent: #e11d48;
-      --accent-hover: #be123c;
-      --gold: #f59e0b;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --border: #334155;
+      --bg-top: #061614;
+      --bg-bottom: #0d2b26;
+      --card-bg: rgba(13, 36, 32, 0.86);
+      --surface: rgba(6, 22, 20, 0.72);
+      --crimson: #d62839;
+      --crimson-hover: #b81d2c;
+      --whatsapp: #1fa855;
+      --whatsapp-hover: #188c46;
+      --gold: #f4c465;
+      --gold-dim: rgba(244, 196, 101, 0.25);
+      --text: #f8faf9;
+      --muted: #a3bcb6;
+      --border: rgba(244, 196, 101, 0.22);
     }
-    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     body {
       margin: 0;
-      min-height: 100vh;
-      background: radial-gradient(circle at top, #1e293b, var(--bg));
+      min-height: 100dvh;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
       color: var(--text);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(214, 40, 57, 0.16), transparent 55%),
+        radial-gradient(circle at 85% 90%, rgba(244, 196, 101, 0.12), transparent 50%),
+        linear-gradient(170deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1.5rem;
+      padding: max(1.25rem, env(safe-area-inset-top)) 1rem max(1.5rem, env(safe-area-inset-bottom));
+      overflow-x: hidden;
     }
-    .container {
+
+    #snow-canvas {
+      position: fixed;
+      inset: 0;
       width: 100%;
-      max-width: 520px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
     }
-    h1 { margin: 0 0 0.5rem; font-size: 1.6rem; text-align: center; }
-    p.subtitle { margin: 0 0 1.5rem; color: var(--muted); text-align: center; font-size: 0.95rem; }
-    label { display: block; font-weight: 600; margin-bottom: 0.4rem; font-size: 0.9rem; }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 500px;
+      background: var(--card-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 2rem 1.5rem;
+      box-shadow:
+        0 24px 50px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .header-ornament {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-family: 'Fraunces', Georgia, serif;
+      margin: 0 0 0.45rem;
+      font-size: clamp(1.65rem, 5vw, 2rem);
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: -0.02em;
+      background: linear-gradient(180deg, #fff8e7 15%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    p.subtitle {
+      margin: 0 0 1.6rem;
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.94rem;
+      line-height: 1.5;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.45rem;
+      font-size: 0.88rem;
+      color: #e2ece9;
+    }
+
+    /* 16px evita el zoom automático en Safari iOS al tocar inputs */
     textarea, input {
       width: 100%;
-      background: #0f172a;
-      border: 1px solid var(--border);
+      background: var(--surface);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       color: var(--text);
-      border-radius: 10px;
-      padding: 0.8rem;
-      font-size: 0.95rem;
+      border-radius: 14px;
+      padding: 0.85rem 1rem;
+      font-family: inherit;
+      font-size: 16px;
+      line-height: 1.45;
       margin-bottom: 1.2rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    textarea:focus, input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+    textarea::placeholder, input::placeholder {
+      color: #6f8c85;
+    }
+
+    textarea:focus, input:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(244, 196, 101, 0.16);
+    }
+
     button {
       width: 100%;
-      background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      padding: 0.9rem 1.2rem;
+      min-height: 50px;
+      background: linear-gradient(180deg, #e03142 0%, var(--crimson) 100%);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px;
+      padding: 0.85rem 1.2rem;
+      font-family: inherit;
       font-size: 1rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
+      touch-action: manipulation;
+      box-shadow: 0 8px 20px rgba(214, 40, 57, 0.32);
+      transition: transform 0.12s ease, background 0.2s ease, box-shadow 0.2s ease;
     }
-    button:hover { background: var(--accent-hover); }
-    button:active { transform: scale(0.99); }
+
+    button:hover {
+      background: var(--crimson-hover);
+      box-shadow: 0 10px 24px rgba(214, 40, 57, 0.42);
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+      margin: 1.6rem 0;
+    }
+
     .link-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #0f172a;
-      border: 1px solid var(--border);
-      padding: 0.75rem 1rem;
-      border-radius: 10px;
-      margin-bottom: 0.6rem;
+      gap: 0.65rem;
+      background: var(--surface);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      padding: 0.7rem 0.85rem;
+      border-radius: 14px;
+      margin-bottom: 0.65rem;
     }
-    .link-item span { font-weight: 600; }
-    .copy-btn {
+
+    .link-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.45rem;
+      flex-shrink: 0;
+    }
+
+    .mini-btn {
       width: auto;
-      padding: 0.45rem 0.9rem;
-      font-size: 0.85rem;
-      background: #334155;
+      min-height: 40px;
+      padding: 0.45rem 0.8rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border-radius: 10px;
+      box-shadow: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
     }
-    .copy-btn.copied { background: #16a34a; }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow: none;
+    }
+
+    .copy-btn.copied {
+      background: #16a34a;
+      border-color: #22c55e;
+    }
+
+    .wa-btn {
+      background: var(--whatsapp);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .wa-btn:hover {
+      background: var(--whatsapp-hover);
+      box-shadow: none;
+    }
+
+    /* Tarjeta de revelación */
     .reveal-box {
       text-align: center;
-      padding: 2rem 1rem;
-      background: #0f172a;
-      border: 1px dashed var(--gold);
-      border-radius: 12px;
-      margin: 1.5rem 0;
+      padding: 2.2rem 1.25rem;
+      background:
+        radial-gradient(circle at top, rgba(244, 196, 101, 0.12), transparent 70%),
+        var(--surface);
+      border: 1.5px dashed var(--gold-dim);
+      border-radius: 18px;
+      margin: 1.25rem 0 0.5rem;
     }
+
+    .gift-badge {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 1rem;
+      border-radius: 50%;
+      background: rgba(214, 40, 57, 0.18);
+      border: 1px solid rgba(244, 196, 101, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: floatGift 3s ease-in-out infinite;
+    }
+
+    @keyframes floatGift {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    .reveal-animate {
+      animation: revealPop 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes revealPop {
+      0% { opacity: 0; transform: scale(0.88) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
     .target-name {
-      font-size: 2rem;
-      font-weight: 800;
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: clamp(2rem, 7vw, 2.5rem);
+      font-weight: 700;
       color: var(--gold);
-      margin: 0.5rem 0;
-      letter-spacing: 0.5px;
+      margin: 0.6rem 0 0.8rem;
+      line-height: 1.15;
+      text-shadow: 0 4px 20px rgba(244, 196, 101, 0.3);
+      word-break: break-word;
     }
+
     .rule-badge {
       display: inline-block;
-      background: rgba(245, 158, 11, 0.15);
-      color: var(--gold);
-      padding: 0.4rem 0.8rem;
+      background: rgba(244, 196, 101, 0.14);
+      border: 1px solid rgba(244, 196, 101, 0.3);
+      color: #fde6b0;
+      padding: 0.5rem 1rem;
       border-radius: 999px;
-      font-size: 0.85rem;
-      margin-top: 0.5rem;
+      font-size: 0.86rem;
+      line-height: 1.4;
+      margin-top: 0.4rem;
     }
-    .hidden { display: none; }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 400px) {
+      .container {
+        padding: 1.6rem 1.15rem;
+        border-radius: 20px;
+      }
+      .link-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.55rem;
+      }
+      .btn-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .mini-btn {
+        justify-content: center;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+  <canvas id="snow-canvas" aria-hidden="true"></canvas>
+
+  <main class="container">
+    <!-- Ornamento superior SVG -->
+    <div class="header-ornament" aria-hidden="true">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+        <circle cx="22" cy="24" r="14" fill="url(#ornamentGrad)" stroke="#F4C465" stroke-width="1.5"/>
+        <rect x="18.5" y="7" width="7" height="4" rx="1.5" fill="#F4C465"/>
+        <path d="M22 3V7" stroke="#F4C465" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M13 24C16 21 20 27 23 24C26 21 29 26 31 24" stroke="#FDE6B0" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="17" cy="18" r="1.5" fill="#FFF8E7" fill-opacity="0.8"/>
+        <defs>
+          <radialGradient id="ornamentGrad" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(17 18) rotate(50) scale(22)">
+            <stop stop-color="#F04758"/>
+            <stop offset="1" stop-color="#9E1624"/>
+          </radialGradient>
+        </defs>
+      </svg>
+    </div>
+
     <!-- VISTA 1: ORGANIZADOR -->
-    <div id="organizer-view">
-      <h1>Sorteo Amigo Secreto</h1>
-      <p class="subtitle">Genera enlaces privados. Nadie (ni tú) verá quién le tocó a quién.</p>
+    <section id="organizer-view">
+      <h1>Amigo Secreto</h1>
+      <p class="subtitle">Genera enlaces privados para Navidad. Nadie (ni siquiera tú) sabrá quién le tocó a quién.</p>
 
       <label for="names">Participantes (1 nombre por línea):</label>
-      <textarea id="names" rows="10" placeholder="Ana&#10;Carlos&#10;Sofía&#10;..."></textarea>
+      <textarea id="names" rows="8" placeholder="Ana&#10;Carlos&#10;Sofía&#10;Mateo&#10;..."></textarea>
 
-      <label for="rules">Regla o presupuesto (opcional):</label>
-      <input id="rules" type="text" placeholder="Ej: Regalo de $50.000 - Entrega 24 de dic" />
+      <label for="rules">Presupuesto o regla (opcional):</label>
+      <input id="rules" type="text" placeholder="Ej: Regalo de $50.000 · Entrega 24 de dic" />
 
-      <button id="generate-btn">Generar enlaces secretos</button>
+      <button id="generate-btn" type="button">Generar enlaces secretos</button>
 
-      <div id="results-section" class="hidden" style="margin-top: 1.8rem;">
+      <div id="results-section" class="hidden">
+        <div class="divider"></div>
         <p class="subtitle" style="margin-bottom: 1rem;">
-          Envía cada enlace por privado. El resultado está oculto dentro del código de la URL.
+          Envía cada enlace por privado. El destinatario va oculto dentro del código de la URL.
         </p>
         <div id="links-list"></div>
       </div>
-    </div>
+    </section>
 
     <!-- VISTA 2: PARTICIPANTE -->
-    <div id="participant-view" class="hidden">
+    <section id="participant-view" class="hidden">
       <h1>Tu Amigo Secreto</h1>
       <p class="subtitle" id="greeting"></p>
 
       <div class="reveal-box">
         <div id="pre-reveal">
-          <p style="color: var(--muted); margin-bottom: 1rem;">Asegúrate de que nadie esté mirando tu pantalla.</p>
-          <button id="reveal-btn">Descubrir a quién le regalo</button>
+          <div class="gift-badge" aria-hidden="true">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#F4C465" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 12 20 22 4 22 4 12"></polyline>
+              <rect x="2" y="7" width="20" height="5"></rect>
+              <line x1="12" y1="22" x2="12" y2="7"></line>
+              <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+              <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+            </svg>
+          </div>
+          <p style="color: var(--muted); margin: 0 0 1.25rem; font-size: 0.92rem;">
+            Asegúrate de que nadie esté mirando tu pantalla antes de abrir tu tarjeta.
+          </p>
+          <button id="reveal-btn" type="button">Descubrir a quién le regalo</button>
         </div>
+
         <div id="post-reveal" class="hidden">
-          <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">Te tocó regalarle a:</p>
+          <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">Esta Navidad te tocó regalarle a:</p>
           <div class="target-name" id="target-name"></div>
           <div id="rule-display" class="rule-badge hidden"></div>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <script>
-    // Codificación UTF-8 + XOR con salt aleatorio + Base64 URL-safe
+    // --- 1. Efecto de nieve suave + confeti dorado al revelar ---
+    (function initSnow() {
+      const canvas = document.getElementById('snow-canvas');
+      const ctx = canvas.getContext('2d');
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+
+      window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
+
+      const flakeCount = reduceMotion ? 18 : Math.min(65, Math.floor(width / 14));
+      const flakes = Array.from({ length: flakeCount }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        r: Math.random() * 2.6 + 1,
+        speedY: Math.random() * 0.75 + 0.3,
+        drift: Math.random() * Math.PI * 2,
+        opacity: Math.random() * 0.55 + 0.25
+      }));
+
+      let confetti = [];
+      window.triggerConfetti = function () {
+        if (reduceMotion) return;
+        const colors = ['#f4c465', '#fde6b0', '#e03142', '#ffffff'];
+        for (let i = 0; i < 55; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const velocity = Math.random() * 5 + 2.5;
+          confetti.push({
+            x: width / 2,
+            y: height * 0.45,
+            vx: Math.cos(angle) * velocity,
+            vy: Math.sin(angle) * velocity - 2,
+            size: Math.random() * 6 + 4,
+            color: colors[i % colors.length],
+            alpha: 1,
+            rot: Math.random() * 360
+          });
+        }
+      };
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+
+        for (const f of flakes) {
+          if (!reduceMotion) {
+            f.y += f.speedY;
+            f.drift += 0.012;
+            f.x += Math.sin(f.drift) * 0.35;
+            if (f.y > height + 5) {
+              f.y = -5;
+              f.x = Math.random() * width;
+            }
+          }
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 250, 240, ${f.opacity})`;
+          ctx.fill();
+        }
+
+        confetti = confetti.filter(c => c.alpha > 0.02);
+        for (const c of confetti) {
+          c.x += c.vx;
+          c.y += c.vy;
+          c.vy += 0.14;
+          c.alpha -= 0.014;
+          c.rot += 6;
+          ctx.save();
+          ctx.translate(c.x, c.y);
+          ctx.rotate((c.rot * Math.PI) / 180);
+          ctx.globalAlpha = Math.max(0, c.alpha);
+          ctx.fillStyle = c.color;
+          ctx.fillRect(-c.size / 2, -c.size / 2, c.size, c.size * 0.6);
+          ctx.restore();
+        }
+
+        requestAnimationFrame(animate);
+      }
+      animate();
+    })();
+
+    // --- 2. Codificación UTF-8 + XOR con salt aleatorio + Base64 URL-safe ---
     function encodeSecret(payload) {
       const bytes = new TextEncoder().encode(JSON.stringify(payload));
       const salt = crypto.getRandomValues(new Uint8Array(1))[0];
@@ -179,7 +502,6 @@
       return JSON.parse(new TextDecoder().decode(bytes));
     }
 
-    // Mezcla criptográfica Fisher-Yates
     function cryptoShuffle(array) {
       const arr = [...array];
       for (let i = arr.length - 1; i > 0; i--) {
@@ -191,23 +513,28 @@
       return arr;
     }
 
-    // Inicialización según modo (Organizador vs Participante)
+    // --- 3. Lógica de vistas (Organizador vs Participante) ---
     const hash = window.location.hash;
     if (hash.startsWith('#s=')) {
       try {
         const data = decodeSecret(hash.slice(3));
         document.getElementById('organizer-view').classList.add('hidden');
         document.getElementById('participant-view').classList.remove('hidden');
-        document.getElementById('greeting').textContent = `Hola ${data.g}, este es tu pase privado del sorteo.`;
+        document.getElementById('greeting').textContent = `Hola ${data.g}, este es tu pase secreto de Navidad.`;
         document.getElementById('target-name').textContent = data.r;
+
         if (data.m) {
           const ruleEl = document.getElementById('rule-display');
           ruleEl.textContent = data.m;
           ruleEl.classList.remove('hidden');
         }
+
         document.getElementById('reveal-btn').addEventListener('click', () => {
           document.getElementById('pre-reveal').classList.add('hidden');
-          document.getElementById('post-reveal').classList.remove('hidden');
+          const postEl = document.getElementById('post-reveal');
+          postEl.classList.remove('hidden');
+          postEl.classList.add('reveal-animate');
+          if (window.triggerConfetti) window.triggerConfetti();
         });
       } catch (e) {
         alert('El enlace del sorteo es inválido o está incompleto.');
@@ -228,14 +555,12 @@
         return;
       }
 
-      // Ciclo único: el elemento i le regala al elemento (i + 1) % N
       const shuffled = cryptoShuffle(names);
       const pairs = shuffled.map((giver, idx) => ({
         giver,
         receiver: shuffled[(idx + 1) % shuffled.length]
       }));
 
-      // Ordenar la lista visual alfabéticamente para no revelar el orden del ciclo
       pairs.sort((a, b) => a.giver.localeCompare(b.giver));
 
       const baseUrl = window.location.href.split('#')[0];
@@ -245,27 +570,35 @@
       pairs.forEach(({ giver, receiver }) => {
         const token = encodeSecret({ g: giver, r: receiver, m: rule });
         const fullUrl = `${baseUrl}#s=${token}`;
+        const waText = encodeURIComponent(`Hola ${giver}, aquí tienes tu enlace secreto para el sorteo de Navidad:\n${fullUrl}`);
 
         const row = document.createElement('div');
         row.className = 'link-item';
         row.innerHTML = `
-          <span>Para: ${giver}</span>
-          <button class="copy-btn">Copiar enlace</button>
+          <span class="link-name">${giver}</span>
+          <div class="btn-group">
+            <button type="button" class="mini-btn copy-btn">Copiar</button>
+            <a class="mini-btn wa-btn" href="https://wa.me/?text=${waText}" target="_blank" rel="noopener">WhatsApp</a>
+          </div>
         `;
-        const btn = row.querySelector('button');
-        btn.addEventListener('click', async () => {
+
+        const copyBtn = row.querySelector('.copy-btn');
+        copyBtn.addEventListener('click', async () => {
           await navigator.clipboard.writeText(fullUrl);
-          btn.textContent = '¡Copiado!';
-          btn.classList.add('copied');
+          copyBtn.textContent = '¡Listo!';
+          copyBtn.classList.add('copied');
           setTimeout(() => {
-            btn.textContent = 'Copiar enlace';
-            btn.classList.remove('copied');
+            copyBtn.textContent = 'Copiar';
+            copyBtn.classList.remove('copied');
           }, 2000);
         });
+
         listEl.appendChild(row);
       });
 
-      document.getElementById('results-section').classList.remove('hidden');
+      const resultsEl = document.getElementById('results-section');
+      resultsEl.classList.remove('hidden');
+      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   </script>
 </body>
